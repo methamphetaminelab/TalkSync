@@ -6,6 +6,61 @@ import asyncio
 import websockets
 import json
 
+style = Style.from_dict({
+    "prompt": "bold #00ff00",  # Применение яркого зеленого для подсказки
+    "input": "#ff6666",        # Красный цвет для ввода
+    "message": "#00bfff",      # Голубой для сообщений
+    "error": "bold #ff0000",   # Ярко-красный для ошибок
+    "command": "underline #ffff00",  # Подчеркнутый желтый для команд
+})
+
+commands = WordCompleter(
+    ["connect", "disconnect", "send", "whisper", "chatmode","help", "exit"],
+    ignore_case=True
+)
+
+async def main():
+    session = PromptSession()
+    websocket = None
+    print("\n-*- TalkSync v2 -*-\n")
+
+    with patch_stdout():
+        while True:
+            try:
+                command = await session.prompt_async(
+                    ">>> ",
+                    completer=commands,
+                    style=style,
+                    complete_in_thread=True,
+                )
+
+                if command == "connect":
+                    websocket = await connect(session)
+                elif command == "disconnect":
+                    await disconnect(websocket)
+                elif command == "send":
+                    text = await session.prompt_async("Enter message: ")
+                    await sendGlobalMessage(websocket, text)
+                elif command == "whisper":
+                    receiver_id = await session.prompt_async("Enter receiver ID: ")
+                    text = await session.prompt_async("Enter message: ")
+                    await sendPrivateMessage(websocket, text, receiver_id)
+                elif command == "chatmode":
+                    await chatMode(websocket, session)
+                elif command == "help":
+                    await printHelp()
+                elif command == "exit":
+                    print("\nExiting...")
+                    break
+                else:
+                    print("Unknown command. Type 'help' for a list of commands.")
+            except KeyboardInterrupt:
+                print("\nExiting...")
+                break
+
+    if websocket:
+        await websocket.close()
+
 async def sendGlobalMessage(websocket, text: str):
     try:
         message = {
@@ -87,58 +142,6 @@ async def printHelp():
         )
     except Exception as e:
         print(e)
-
-style = Style.from_dict({
-    "prompt": "bold #00ff00",
-    "": "#ffffff"
-})
-
-commands = WordCompleter(
-    ["connect", "disconnect", "send", "whisper", "chatmode","help", "exit"],
-    ignore_case=True
-)
-
-async def main():
-    session = PromptSession()
-    websocket = None
-    print("\n-*- TalkSync v2 -*-\n")
-
-    with patch_stdout():
-        while True:
-            try:
-                command = await session.prompt_async(
-                    ">>> ",
-                    completer=commands,
-                    style=style,
-                    complete_in_thread=True,
-                )
-
-                if command == "connect":
-                    websocket = await connect(session)
-                elif command == "disconnect":
-                    await disconnect(websocket)
-                elif command == "send":
-                    text = await session.prompt_async("Enter message: ")
-                    await sendGlobalMessage(websocket, text)
-                elif command == "whisper":
-                    receiver_id = await session.prompt_async("Enter receiver ID: ")
-                    text = await session.prompt_async("Enter message: ")
-                    await sendPrivateMessage(websocket, text, receiver_id)
-                elif command == "chatmode":
-                    await chatMode(websocket, session)
-                elif command == "help":
-                    await printHelp()
-                elif command == "exit":
-                    print("\nExiting...")
-                    break
-                else:
-                    print("Unknown command. Type 'help' for a list of commands.")
-            except KeyboardInterrupt:
-                print("\nExiting...")
-                break
-
-    if websocket:
-        await websocket.close()
 
 if __name__ == "__main__":
     asyncio.run(main())
