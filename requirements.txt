@@ -1,0 +1,3 @@
+fastapi==0.115.6
+prompt_toolkit==3.0.43
+websockets==12.0
