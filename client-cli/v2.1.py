@@ -22,7 +22,7 @@ commands = WordCompleter(
 async def main():
     session = PromptSession()
     websocket = None
-    print("\n╔═════════════════╗\n║   TalkSync v2   ║\n╚═════════════════╝\n")
+    print("\n╔═══════════════════╗\n║   TalkSync v2.1   ║\n╚═══════════════════╝\n")
     await print_help()
 
     with patch_stdout():
